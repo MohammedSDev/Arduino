@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent">
+
+	<Button
+		android:id="@+id/connectBtn"
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:background="#2196F3"
+		android:text="Connect"
+		android:textColor="#fff"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toStartOf="@id/cancelBtn"
+		app:layout_constraintStart_toStartOf="parent" />
+
+	<Button
+		android:id="@+id/cancelBtn"
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:background="#F44336"
+		android:text="Cancel"
+		android:textColor="#fff"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintStart_toEndOf="@id/connectBtn" />
+
+	<androidx.recyclerview.widget.RecyclerView
+		android:layout_width="match_parent"
+		android:layout_height="0dp"
+		android:id="@+id/devicesRecycler"
+		app:layout_constraintBottom_toTopOf="@+id/connectBtn"
+		app:layout_constraintTop_toBottomOf="@id/deviceLoading" />
+
+
+	<ProgressBar
+		android:id="@+id/deviceLoading"
+		style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:indeterminate="true"
+		android:indeterminateTint="#2196F3"
+		android:maxHeight="10dp"
+		android:minHeight="10dp"
+		android:visibility="gone"
+		app:layout_constraintTop_toTopOf="parent"
+		tools:visibility="visible" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
