@@ -7,7 +7,7 @@
 	android:layout_height="match_parent"
 	app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-	<LinearLayout
+	<FrameLayout
 		android:id="@+id/connectDeviceContainer"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
@@ -19,11 +19,21 @@
 			android:id="@+id/menuImg"
 			android:layout_width="45dp"
 			android:layout_height="45dp"
-			android:tint="#FFC107"
 			android:padding="10dp"
+			android:tint="#FFC107"
 			app:lottie_autoPlay="true"
 			app:lottie_fileName="menu_icon.json" />
-	</LinearLayout>
+
+		<ImageView
+			android:id="@+id/settingMenu"
+			android:layout_width="44dp"
+			android:layout_height="44dp"
+			android:padding="10dp"
+			android:src="@drawable/ic_menu_dots"
+			android:layout_gravity="end"
+			/>
+
+	</FrameLayout>
 
 	<com.airbnb.lottie.LottieAnimationView
 		android:id="@+id/statusImg"

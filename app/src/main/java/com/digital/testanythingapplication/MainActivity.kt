@@ -6,18 +6,20 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.res.Resources
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
-import android.view.Menu
+import android.view.Gravity
 import androidx.appcompat.app.AppCompatActivity
 import android.view.View
+import android.widget.PopupMenu
 import android.widget.Toast
+import androidx.annotation.UiThread
 import androidx.annotation.WorkerThread
 import androidx.lifecycle.ViewModelProvider
-import com.digital.appktx.isNullValue
+import com.digital.appktx.removeFirstItemIf
 
-import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
 import java.util.*
 
@@ -31,7 +33,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 	private var bluetoothHeadset: BluetoothHeadset? = null
 	val REQUEST_ENABLE_BT = 10
 	val bluetoothAdapter: BluetoothAdapter? by lazy { BluetoothAdapter.getDefaultAdapter() }
-	private var selectedDevice: BluetoothDevice? = null
+	private var connectedDevices = mutableListOf<MPair<DeviceModel, Thread?>>()
 	private var clientSocket: BluetoothSocket? = null
 	private val uuidName = "00001101-0000-1000-8000-00805F9B34FB"
 	private val filter = IntentFilter(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED)
@@ -39,6 +41,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
 		override fun onReceive(context: Context, intent: Intent) {
 			onConnectStatusChange()
+
 //			val status: Int = intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE,-1)!!
 //			when (status) {
 //				BluetoothAdapter.STATE_CONNECTED -> {
@@ -50,6 +53,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 //			}
 		}
 	}
+
 	// Register for broadcasts when a device is discovered.
 	private val profileListener = object : BluetoothProfile.ServiceListener {
 
@@ -68,11 +72,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 			}
 		}
 	}
-	private var connectThread: Thread? = null
-		get() {
-			if (field == null) field = getNewConnectThread()
-			return field
-		}
 
 	val vm: MainActivityVM by lazy {
 		ViewModelProvider(
@@ -103,7 +102,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
-		registerReceiver(receiver,filter)
+		registerReceiver(receiver, filter)
 		bluetoothAdapter?.getProfileProxy(this, profileListener, BluetoothProfile.HEADSET)
 		menuImg.setMinFrame(200)
 		menuImg.setMaxFrame(294)
@@ -111,20 +110,26 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 		menuImg.addAnimatorListener(animationListener)
 		//disConnect
 		menuImg.setOnClickListener(this)
-		fab1.setOnClickListener {
-			if (bluetoothAdapter?.isDiscovering == true)
-				bluetoothAdapter?.cancelDiscovery()
-			clearConnectThread()
-			selectedDevice = null
-		}
+		settingMenu.setOnClickListener(this)
 
 	}
 
+	private fun disConnectAll() {
+		if (bluetoothAdapter?.isDiscovering == true)
+			bluetoothAdapter?.cancelDiscovery()
+		clearConnectThread()
+		onConnectStatusChange()
+		connectedDevices = mutableListOf()
+	}
+
+	@UiThread
 	private fun checkAndRequestPerRequiredBluetooth(): Boolean {
 		return if (bluetoothAdapter == null) {
 			// Device doesn't support Bluetooth
-			disableAll()
-			toast(getString(R.string.its_seem_this_device_dosnt_support_blutooth))
+			runOnUiThread {
+				disableAll()
+				toast(getString(R.string.its_seem_this_device_dosnt_support_blutooth))
+			}
 			false
 		} else if (bluetoothAdapter?.isEnabled == false) {
 			setBluetoothDisableStatus()
@@ -132,36 +137,49 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 			startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
 			false
 		} else {
-			enableAll()
+			runOnUiThread {
+				enableAll()
+			}
 			true
 		}
+
 	}
 
 
-	private fun getNewConnectThread(): Thread {
+	private fun getNewConnectThread(deviceModel: DeviceModel): Thread {
 		return Thread {
-			if (clientSocket?.isConnected != true) {
-				val uuids = if (selectedDevice?.uuids.isNullOrEmpty()) listOf(UUID.fromString(uuidName))
-				else selectedDevice!!.uuids!!.map { it.uuid }.toList().plus(UUID.fromString(uuidName))
-				run loop@{
-					uuids.forEachIndexed { index, it ->
-						runCatching {
-							clientSocket = selectedDevice?.createRfcommSocketToServiceRecord(it)
-							clientSocket?.connect()
-							onConnectStatusChange()
-							onConnectSuccess()
-							return@loop
-						}.onFailure {
-							clientSocket?.close()
-							clientSocket = null
-							onConnectFailed()
-							onConnectStatusChange()
-						}
-					}
+			if (deviceModel.socket?.isConnected != true) {
+				intiDeviceConnection(deviceModel)
+			}
+			if (deviceModel.socket?.isConnected == true)
+				startReading(deviceModel.socket!!)
+		}
+	}
+
+	@Synchronized
+	private fun intiDeviceConnection(deviceModel: DeviceModel) {
+		val uuids = if (deviceModel.device?.uuids.isNullOrEmpty()) listOf(UUID.fromString(uuidName))
+		else deviceModel.device!!.uuids!!.map { it.uuid }.toList().plus(UUID.fromString(uuidName))
+		run loop@{
+			var connectFailed = false
+			uuids.forEachIndexed { index, it ->
+				runCatching {
+//					deviceModel.socket = deviceModel.device?.createRfcommSocketToServiceRecord(it)
+					deviceModel.socket = bluetoothAdapter?.getRemoteDevice(deviceModel.address)?.createRfcommSocketToServiceRecord(it)
+					deviceModel.socket?.connect()
+					onConnectStatusChange()
+					onConnectSuccess()
+					return@loop
+				}.onFailure {
+					deviceModel.socket?.close()
+					deviceModel.socket = null
+					connectFailed = true
 				}
 			}
-			if (clientSocket != null)
-				startReading(clientSocket!!)
+			if (connectFailed) {
+				clearSingleDeviceConnectThread(deviceModel)
+				onConnectFailed()
+			}
 		}
 	}
 
@@ -181,8 +199,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 		statusImg.cancelAnimation()
 		statusImg.clearAnimation()
 		statusTV.text = ""
-		if (selectedDevice.isNullValue()){
+		if (connectedDevices.isEmpty()) {
 			setNoDeviceConnectedStatus()
+		} else {
+			startConnect()
 		}
 	}
 
@@ -193,11 +213,12 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 	}
 
 	private fun disableAll() {
-		selectedDevice = null
 		clearConnectThread()
+		connectedDevices = mutableListOf()
 		menuImg.isEnabled = false
 		statusImg.cancelAnimation()
 		setBluetoothDisableStatus()
+		onConnectStatusChange()
 	}
 
 	private fun setBluetoothDisableStatus() {
@@ -210,15 +231,14 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
 	private fun startConnect() {
 		bluetoothAdapter?.cancelDiscovery()
-		clearConnectThread()
-		connectThread?.start()
+//		clearConnectThread()
+		connectedDevices.filter { it.second == null || it.first.socket?.isConnected != true }.forEach {
+			if (it.second != null) clearSingleDeviceConnectThread(it.first)
+			it.second = getNewConnectThread(it.first)
+			it.second?.start()
+		}
 	}
 
-	override fun onCreateOptionsMenu(menu: Menu): Boolean {
-		menu.add(0, 1, 0, "start Discovering")
-		menu.add(0, 2, 0, "start Discovering")
-		return super.onCreateOptionsMenu(menu)
-	}
 
 	private fun startReading(socket: BluetoothSocket) {
 		Log.d("mud", "--listening--")
@@ -226,14 +246,16 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 		var errorSkip = 3
 		while (true) {
 			runCatching {
-				onHandleNewValue(reader.readLine())
+				if (connectedDevices.find { it.second == Thread.currentThread() } != null)
+					onHandleNewValue(reader.readLine())
+				else throw Resources.NotFoundException("thread was removed from connected devices list.")
 			}.onFailure {
 				Log.d("mud", "----- stop reading,${it.message}")
 				errorSkip--
 				if (errorSkip <= 0) {
-					clearConnectThread()
+					clearSingleDeviceConnectThread(socket)
 					//notifyUser
-					toast("Reading Failed, ${it.message}")
+					//toast("Reading Failed, ${it.message}")
 					return
 				}
 			}
@@ -243,10 +265,34 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 	}
 
 	private fun clearConnectThread() {
-		connectThread = null
-		clientSocket?.close()
-		clientSocket = null
-		onConnectStatusChange()
+		connectedDevices.forEach {
+			it.second = null
+			it.first.socket?.close()
+			it.first.socket = null
+		}
+	}
+
+	private fun clearSingleDeviceConnectThread(socket: BluetoothSocket) {
+		val deviceWasConnected = socket.isConnected
+		socket.close()
+		connectedDevices.find { it.first.socket == socket }?.let {
+			it.second = null
+			it.first.socket?.close()
+			it.first.socket = null
+			if (deviceWasConnected)
+				onConnectStatusChange()
+		}
+	}
+
+	private fun clearSingleDeviceConnectThread(deviceModel: DeviceModel) {
+		connectedDevices.find { it.first == deviceModel }?.let {
+			it.second = null
+			if (it.first.socket?.isConnected == true) {
+				onConnectStatusChange()
+			}
+			it.first.socket?.close()
+			it.first.socket = null
+		}
 	}
 
 	private fun onHandleNewValue(text: String?) {
@@ -288,9 +334,13 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 	}
 
 	private fun onConnectStatusChange() {
-		val status = if (clientSocket?.isConnected == true) "Connected" else {
+		val status = if (connectedDevices.find { it.first.socket?.isConnected == true } == null) {
+			//no connect device
 			checkAndRequestPerRequiredBluetooth()
 			"disConnected"
+		} else {
+			//at least one device connected.
+			"Connected"
 		}
 		toast(status)
 	}
@@ -310,19 +360,20 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 				if (checkAndRequestPerRequiredBluetooth())
 					openMenuDialog()
 			}
-			else -> {
-				val device = v.tag as? BluetoothDevice
-				selectedDevice = bluetoothAdapter?.getRemoteDevice(device?.address)
-				toast(v.tag.toString())
+			R.id.settingMenu -> {
+				showDisConnectMenu()
 			}
 		}
 	}
 
 	private fun openMenuDialog() {
 		DevicesDialog()
-			.setCallBack {
-				selectedDevice = it.device
-				startConnect()
+			.setCallBack { model ->
+				if (connectedDevices.find { it.first == model } == null) {
+					connectedDevices.add(MPair(model, null))
+					startConnect()
+				}
+
 			}
 			.show(supportFragmentManager, "sfma")
 	}
@@ -331,11 +382,43 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 		runOnUiThread { Toast.makeText(this, text, Toast.LENGTH_LONG).show() }
 	}
 
+	fun showDisConnectMenu() {
+		var hasItem = false
+		val popUp = PopupMenu(this, settingMenu, Gravity.BOTTOM).apply {
+			menu.add(0, 0, 0, "disConnect All")
+			connectedDevices.filter { it.second != null && it.first.socket?.isConnected == true }.forEach {
+				hasItem = true
+				menu.add(1, it.first.address.hashCode(), 0, "disConnect ${it.first.name}")
+			}
+			setOnMenuItemClickListener { item ->
+				if (item.groupId == 0) {
+					disConnectAll()
+				} else {
+					connectedDevices?.find { it.first.address.hashCode() == item.itemId }?.let {
+						disConnectDevice(it.first)
+					}
+				}
+				false
+			}
+		}
+		if (hasItem)
+			popUp.show()
+		else
+			toast(getString(R.string.no_device_connecetd))
+
+	}
+
+	private fun disConnectDevice(model: DeviceModel) {
+		if (model.socket != null) {
+			clearSingleDeviceConnectThread(model.socket!!)
+			connectedDevices.removeFirstItemIf { it.first == model }
+		}
+	}
 
 	override fun onStart() {
 		super.onStart()
 		checkAndRequestPerRequiredBluetooth()
-		if (selectedDevice != null) {
+		if (connectedDevices.isNotEmpty()) {
 			startConnect()
 		}
 	}
@@ -362,3 +445,4 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 }
 
 
+data class MPair<A, B>(var first: A, var second: B)

@@ -2,6 +2,7 @@ package com.digital.testanythingapplication
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothSocket
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -81,9 +82,14 @@ class DevicesDialog : DialogFragment() {
 			.setCallback { itemView, position, model, any ->
 				//request connect
 				val list = devicesRecycler.getAdapter<AppAdapter<DeviceModel>>()?.list
-				list?.filter { it.isChecked }?.forEach { it.isChecked = false }
-				model.toggle()
-				devicesRecycler.adapter?.notifyItemChanged(position)
+				list?.filter { it.isChecked }?.let {
+					it.forEach { it.isChecked = false }
+					devicesRecycler.adapter?.notifyItemRangeChanged(0,list.size - 1)
+				}
+				devicesRecycler?.post {
+					model.toggle()
+					devicesRecycler.adapter?.notifyItemChanged(position)
+				}
 			}
 		connectBtn.setOnClickListener {
 			val list = devicesRecycler.getAdapter<AppAdapter<DeviceModel>>()?.list
@@ -138,7 +144,8 @@ data class DeviceModel(
 	val name: String,
 	val address: String,
 	val paired: Boolean = false,
-	val device: BluetoothDevice? = null
+	val device: BluetoothDevice? = null,
+	var socket: BluetoothSocket? = null
 ) : Checkable {
 	private var checked: Boolean = false
 	override fun isChecked() = checked
