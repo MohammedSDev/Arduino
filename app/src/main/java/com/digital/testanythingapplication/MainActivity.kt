@@ -312,11 +312,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 					statusImg.setAnimation("angry.json")
 					statusImg.playAnimation()
 				}
-				CALM -> {
-					statusTV.text = getString(R.string.angry)
-					statusImg.setAnimation("calm.json")
-					statusImg.playAnimation()
-				}
+//				CALM -> {
+//					statusTV.text = getString(R.string.calm)
+//					statusImg.setAnimation("calm.json")
+//					statusImg.playAnimation()
+//				}
 				HAPPY -> {
 					statusTV.text = getString(R.string.happy)
 					statusImg.setAnimation("smiley.json")
@@ -329,7 +329,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 				}
 
 			}
-//				statusImg.setAnimation("angry.json")
 		}
 	}
 
