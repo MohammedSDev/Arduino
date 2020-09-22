@@ -1,0 +1,15 @@
+<resources>
+	<string name="action_settings">الإعدادات</string>
+	<string name="happy">سعيد</string>
+	<string name="saddens">حزين</string>
+	<string name="angry">غضبان</string>
+	<string name="kindly_enable_bluetooth">يرجى تفعيل البلوثوث.</string>
+	<string name="its_seem_this_device_dosnt_support_blutooth">أوبس. يبدوا أن هذا الجهاز لا يدعم البلوثوث.</string>
+	<string name="cancel">إلغاء</string>
+	<string name="connect">إتصال</string>
+	<string name="kindly_select_device_first">يرجى تحديد الجهاز أولاً</string>
+	<string name="connecting_failed_check_target_device_bluetooth">فشل الإتصال.تأكد من بلوثوث في الجهاز الأخر</string>
+	<string name="no_device_connecetd">لا يوجد أتصال</string>
+	<string name="comfortable">مرتاح</string>
+	<string name="nervous">منزعج</string>
+</resources>

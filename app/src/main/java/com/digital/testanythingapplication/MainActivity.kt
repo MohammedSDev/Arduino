@@ -19,6 +19,7 @@ import androidx.annotation.UiThread
 import androidx.annotation.WorkerThread
 import androidx.lifecycle.ViewModelProvider
 import com.digital.appktx.removeFirstItemIf
+import kotlinx.android.synthetic.main.activity_main.*
 
 import kotlinx.android.synthetic.main.content_main.*
 import java.util.*
@@ -30,6 +31,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 	private val SAD = "sad"
 	private val HAPPY = "happy"
 	private val CALM = "calm"
+	private val UPSET = "upset"
 	private var bluetoothHeadset: BluetoothHeadset? = null
 	val REQUEST_ENABLE_BT = 10
 	val bluetoothAdapter: BluetoothAdapter? by lazy { BluetoothAdapter.getDefaultAdapter() }
@@ -112,6 +114,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 		menuImg.setOnClickListener(this)
 		settingMenu.setOnClickListener(this)
 
+
 	}
 
 	private fun disConnectAll() {
@@ -165,7 +168,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 			uuids.forEachIndexed { index, it ->
 				runCatching {
 //					deviceModel.socket = deviceModel.device?.createRfcommSocketToServiceRecord(it)
-					deviceModel.socket = bluetoothAdapter?.getRemoteDevice(deviceModel.address)?.createRfcommSocketToServiceRecord(it)
+					deviceModel.socket = bluetoothAdapter?.getRemoteDevice(deviceModel.address)
+						?.createRfcommSocketToServiceRecord(it)
 					deviceModel.socket?.connect()
 					onConnectStatusChange()
 					onConnectSuccess()
@@ -218,7 +222,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 		menuImg.isEnabled = false
 		statusImg.cancelAnimation()
 		setBluetoothDisableStatus()
-		onConnectStatusChange()
+		//onConnectStatusChange()
 	}
 
 	private fun setBluetoothDisableStatus() {
@@ -312,14 +316,19 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 					statusImg.setAnimation("angry.json")
 					statusImg.playAnimation()
 				}
-//				CALM -> {
-//					statusTV.text = getString(R.string.calm)
-//					statusImg.setAnimation("calm.json")
-//					statusImg.playAnimation()
-//				}
 				HAPPY -> {
 					statusTV.text = getString(R.string.happy)
 					statusImg.setAnimation("smiley.json")
+					statusImg.playAnimation()
+				}
+				CALM -> {
+					statusTV.text = getString(R.string.comfortable)
+					statusImg.setAnimation("comfort.json")
+					statusImg.playAnimation()
+				}
+				UPSET -> {
+					statusTV.text = getString(R.string.nervous)
+					statusImg.setAnimation("nervous.json")
 					statusImg.playAnimation()
 				}
 				else -> {
@@ -385,10 +394,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 		var hasItem = false
 		val popUp = PopupMenu(this, settingMenu, Gravity.BOTTOM).apply {
 			menu.add(0, 0, 0, "disConnect All")
-			connectedDevices.filter { it.second != null && it.first.socket?.isConnected == true }.forEach {
-				hasItem = true
-				menu.add(1, it.first.address.hashCode(), 0, "disConnect ${it.first.name}")
-			}
+			connectedDevices.filter { it.second != null && it.first.socket?.isConnected == true }
+				.forEach {
+					hasItem = true
+					menu.add(1, it.first.address.hashCode(), 0, "disConnect ${it.first.name}")
+				}
 			setOnMenuItemClickListener { item ->
 				if (item.groupId == 0) {
 					disConnectAll()

@@ -1,5 +1,5 @@
 <resources>
-	<string name="app_name">TestAnyThingApplication</string>
+	<string name="app_name" translatable="false">Faces status</string>
 	<string name="action_settings">Settings</string>
 	<string name="happy">Happy</string>
 	<string name="saddens">Saddens</string>
@@ -11,4 +11,6 @@
 	<string name="kindly_select_device_first">Kindly select device first.</string>
 	<string name="connecting_failed_check_target_device_bluetooth">Connecting failed.check target device bluetooth.</string>
 	<string name="no_device_connecetd">no device connected.</string>
+	<string name="comfortable">Comfortable</string>
+	<string name="nervous">Nervous</string>
 </resources>

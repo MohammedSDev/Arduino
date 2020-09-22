@@ -8,8 +8,21 @@
 
 
 	<include layout="@layout/content_main" />
+<!--
 
-
+	<EditText
+		android:id="@+id/ED"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="35dp"
+		/>
+	<Button
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:id="@+id/btn"
+		android:layout_marginTop="65dp"
+		android:text="click"
+		/>-->
 
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
