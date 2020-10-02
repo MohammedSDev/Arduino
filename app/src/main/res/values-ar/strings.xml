@@ -12,4 +12,6 @@
 	<string name="no_device_connecetd">لا يوجد أتصال</string>
 	<string name="comfortable">مرتاح</string>
 	<string name="nervous">منزعج</string>
+	<string name="dic_connect_all">قطع إتصال الجميع</string>
+	<string name="disconnect">قطع إتصال</string>
 </resources>

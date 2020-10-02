@@ -13,4 +13,6 @@
 	<string name="no_device_connecetd">no device connected.</string>
 	<string name="comfortable">Comfortable</string>
 	<string name="nervous">Nervous</string>
+	<string name="dic_connect_all">disConnect All</string>
+	<string name="disconnect">disConnect</string>
 </resources>

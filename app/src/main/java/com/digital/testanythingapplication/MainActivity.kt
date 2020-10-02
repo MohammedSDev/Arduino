@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Resources
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
@@ -27,6 +28,7 @@ import java.util.*
 class MainActivity : AppCompatActivity(), View.OnClickListener {
 	//0000111f-0000-1000-8000-00805f9b34fb //laptop success.
 	//0000111e-0000-1000-8000-00805f9b34fb //BT-06 success.
+	val media by lazy { MediaPlayer.create(this,R.raw.audio_2020) }
 	private val ANGRY = "angry"
 	private val SAD = "sad"
 	private val HAPPY = "happy"
@@ -115,6 +117,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 		settingMenu.setOnClickListener(this)
 
 
+
+		//test
+//		btn.setOnClickListener {
+//			onHandleNewValue(ED.text.toString())
+//		}
 	}
 
 	private fun disConnectAll() {
@@ -245,7 +252,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
 
 	private fun startReading(socket: BluetoothSocket) {
-		Log.d("mud", "--listening--")
 		val reader = socket.inputStream.bufferedReader()
 		var errorSkip = 3
 		while (true) {
@@ -264,7 +270,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 				}
 			}
 		}
-		Log.d("mud", "--Done--")
 
 	}
 
@@ -310,31 +315,37 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 					statusTV.text = getString(R.string.saddens)
 					statusImg.setAnimation("crying.json")
 					statusImg.playAnimation()
+					stopAudio()
 				}
 				ANGRY -> {
 					statusTV.text = getString(R.string.angry)
 					statusImg.setAnimation("angry.json")
 					statusImg.playAnimation()
+					playAudio()
 				}
 				HAPPY -> {
 					statusTV.text = getString(R.string.happy)
 					statusImg.setAnimation("smiley.json")
 					statusImg.playAnimation()
+					stopAudio()
 				}
 				CALM -> {
 					statusTV.text = getString(R.string.comfortable)
 					statusImg.setAnimation("comfort.json")
 					statusImg.playAnimation()
+					stopAudio()
 				}
 				UPSET -> {
 					statusTV.text = getString(R.string.nervous)
 					statusImg.setAnimation("nervous.json")
 					statusImg.playAnimation()
+					playAudio()
 				}
 				else -> {
 					statusTV.text = getString(R.string.happy)
 					statusImg.setAnimation("smiley.json")
 					statusImg.playAnimation()
+					stopAudio()
 				}
 
 			}
@@ -393,11 +404,16 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 	fun showDisConnectMenu() {
 		var hasItem = false
 		val popUp = PopupMenu(this, settingMenu, Gravity.BOTTOM).apply {
-			menu.add(0, 0, 0, "disConnect All")
+			menu.add(0, 0, 0, getString(R.string.dic_connect_all))
 			connectedDevices.filter { it.second != null && it.first.socket?.isConnected == true }
 				.forEach {
 					hasItem = true
-					menu.add(1, it.first.address.hashCode(), 0, "disConnect ${it.first.name}")
+					menu.add(
+						1,
+						it.first.address.hashCode(),
+						0,
+						getString(R.string.disconnect) + " " + it.first.name
+					)
 				}
 			setOnMenuItemClickListener { item ->
 				if (item.groupId == 0) {
@@ -430,11 +446,13 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 		if (connectedDevices.isNotEmpty()) {
 			startConnect()
 		}
+
 	}
 
 	override fun onStop() {
 		super.onStop()
 		clearConnectThread()
+		stopAudio()
 	}
 
 	override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -449,6 +467,19 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 	override fun onDestroy() {
 		super.onDestroy()
 		menuImg.removeAnimatorListener(animationListener)
+		destroyAudio()
+	}
+
+
+	private fun playAudio(){
+			media.start()
+	}
+	private fun destroyAudio(){
+			media.stop()
+			media.release()
+	}
+	private fun stopAudio(){
+			media.pause()
 	}
 
 }
