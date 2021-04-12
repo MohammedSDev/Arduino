@@ -3,6 +3,7 @@
 	<string name="action_settings">Settings</string>
 	<string name="happy">Happy</string>
 	<string name="saddens">Saddens</string>
+	<string name="crying">Crying</string>
 	<string name="angry">Angry</string>
 	<string name="kindly_enable_bluetooth">Kindly enable bluetooth.</string>
 	<string name="its_seem_this_device_dosnt_support_blutooth">Opps.its seem this device dosen\'t support bluetooth.</string>

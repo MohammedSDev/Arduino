@@ -28,12 +28,15 @@ import java.util.*
 class MainActivity : AppCompatActivity(), View.OnClickListener {
 	//0000111f-0000-1000-8000-00805f9b34fb //laptop success.
 	//0000111e-0000-1000-8000-00805f9b34fb //BT-06 success.
-	val media by lazy { MediaPlayer.create(this,R.raw.audio_2020) }
+//	val media by lazy { MediaPlayer.create(this,R.raw.audio_2020) }
+	var media:MediaPlayer? = null
+	private var currentMediaRes:Int? = null
 	private val ANGRY = "angry"
 	private val SAD = "sad"
 	private val HAPPY = "happy"
 	private val CALM = "calm"
 	private val UPSET = "upset"
+	private val CRY = "cry"
 	private var bluetoothHeadset: BluetoothHeadset? = null
 	val REQUEST_ENABLE_BT = 10
 	val bluetoothAdapter: BluetoothAdapter? by lazy { BluetoothAdapter.getDefaultAdapter() }
@@ -116,12 +119,40 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 		menuImg.setOnClickListener(this)
 		settingMenu.setOnClickListener(this)
 
+//		Thread{
+//			while(true){
+//				Thread.sleep(500)
+//				onHandleNewValue(HAPPY)
+//			}
+//		}.start()
 
+//		val filename = "android.resource://" + this.getPackageName() + "/raw/test0";
+//		mp = new MediaPlayer();
+//		try { mp.setDataSource(this,Uri.parse(filename)); } catch (Exception e) {}
+//		try { mp.prepare(); } catch (Exception e) {}
+//		mp.start();
+		//OR
+//		media.prepare()
 
 		//test
 //		btn.setOnClickListener {
-//			onHandleNewValue(ED.text.toString())
+//			onHandleNewValue(when(action){
+//				0->CRY
+//				1->UPSET
+//				2->SAD
+//				3->CALM
+//				else->HAPPY
+//			})
+//			action++
 //		}
+	}
+//	var action = 0
+
+	private fun prepareMedia(audioRes:Int){
+		stopAudio()
+		destroyAudio()
+		media = MediaPlayer.create(this,audioRes)
+		currentMediaRes = audioRes
 	}
 
 	private fun disConnectAll() {
@@ -313,15 +344,23 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 			when (text?.toLowerCase(Locale.ENGLISH)) {
 				SAD -> {
 					statusTV.text = getString(R.string.saddens)
-					statusImg.setAnimation("crying.json")
+					statusImg.setAnimation("sad.json")
 					statusImg.playAnimation()
 					stopAudio()
+				}
+				CRY -> {
+					statusTV.text = getString(R.string.crying)
+					statusImg.setAnimation("crying.json")
+					statusImg.playAnimation()
+					if(currentMediaRes == R.raw.cry) return@runOnUiThread
+					prepareMedia(R.raw.cry)
+					playAudio()
 				}
 				ANGRY -> {
 					statusTV.text = getString(R.string.angry)
 					statusImg.setAnimation("angry.json")
 					statusImg.playAnimation()
-					playAudio()
+					stopAudio()
 				}
 				HAPPY -> {
 					statusTV.text = getString(R.string.happy)
@@ -339,6 +378,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 					statusTV.text = getString(R.string.nervous)
 					statusImg.setAnimation("nervous.json")
 					statusImg.playAnimation()
+					if(currentMediaRes == R.raw.upset) return@runOnUiThread
+					prepareMedia(R.raw.upset)
 					playAudio()
 				}
 				else -> {
@@ -468,18 +509,23 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 		super.onDestroy()
 		menuImg.removeAnimatorListener(animationListener)
 		destroyAudio()
+		unregisterReceiver(receiver)
 	}
 
+	private fun isPLayingAudio()= media?.isPlaying == true
 
 	private fun playAudio(){
-			media.start()
+			toast("play audio...")
+//		if(!isPLayingAudio())
+			media?.start()
 	}
 	private fun destroyAudio(){
-			media.stop()
-			media.release()
+			media?.stop()
+			media?.release()
 	}
 	private fun stopAudio(){
-			media.pause()
+			if(media?.isPlaying == true)
+			media?.pause()
 	}
 
 }

@@ -2,6 +2,7 @@
 	<string name="action_settings">الإعدادات</string>
 	<string name="happy">سعيد</string>
 	<string name="saddens">حزين</string>
+	<string name="crying">يبكي</string>
 	<string name="angry">غضبان</string>
 	<string name="kindly_enable_bluetooth">يرجى تفعيل البلوثوث.</string>
 	<string name="its_seem_this_device_dosnt_support_blutooth">أوبس. يبدوا أن هذا الجهاز لا يدعم البلوثوث.</string>
